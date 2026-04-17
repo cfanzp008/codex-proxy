@@ -1,6 +1,6 @@
 services:
   codex-proxy:
-    image: ghcr.io/icebear0828/codex-proxy:latest
+    image: codex-proxy:dev
     # To build from source instead: comment out 'image' above, uncomment 'build' below
     # build: .
     extra_hosts:
