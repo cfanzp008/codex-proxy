@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 
 const mockConfig = {
-  server: { proxy_api_key: "test-key" as string | null, trust_proxy: false },
+  server: {
+    proxy_api_key: "test-key" as string | null,
+    dashboard_password: null as string | null,
+    trust_proxy: false,
+  },
   session: { ttl_minutes: 60, cleanup_interval_minutes: 5 },
 };
 
@@ -44,6 +48,7 @@ describe("dashboard-auth middleware", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfig.server.proxy_api_key = "test-key";
+    mockConfig.server.dashboard_password = null;
     mockConfig.server.trust_proxy = false;
     mockGetConnInfo.mockReturnValue({ remote: { address: "192.168.1.100" } });
     sessionMod._clearTestSessions();
@@ -51,9 +56,18 @@ describe("dashboard-auth middleware", () => {
 
   it("passes through when proxy_api_key is not set", async () => {
     mockConfig.server.proxy_api_key = null;
+    mockConfig.server.dashboard_password = null;
     const app = createApp();
     const res = await app.request("/auth/accounts");
     expect(res.status).toBe(200);
+  });
+
+  it("requires auth when only dashboard_password is set", async () => {
+    mockConfig.server.proxy_api_key = null;
+    mockConfig.server.dashboard_password = "dashboard-secret";
+    const app = createApp();
+    const res = await app.request("/auth/accounts");
+    expect(res.status).toBe(401);
   });
 
   it("passes through for localhost requests", async () => {

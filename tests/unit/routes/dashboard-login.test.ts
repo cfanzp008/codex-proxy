@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 
 const mockConfig = {
-  server: { proxy_api_key: "secret-key" as string | null, trust_proxy: false },
+  server: {
+    proxy_api_key: "secret-key" as string | null,
+    dashboard_password: null as string | null,
+    trust_proxy: false,
+  },
   session: { ttl_minutes: 60, cleanup_interval_minutes: 5 },
   auth: { rotation_strategy: "least_used" as string },
   quota: {
@@ -89,6 +93,7 @@ describe("dashboard auth endpoints", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfig.server.proxy_api_key = "secret-key";
+    mockConfig.server.dashboard_password = null;
     mockConfig.server.trust_proxy = false;
     mockGetConnInfo.mockReturnValue({ remote: { address: "192.168.1.100" } });
     _resetForTest();
@@ -125,6 +130,36 @@ describe("dashboard auth endpoints", () => {
       expect(res.status).toBe(401);
       const body = await res.json();
       expect(body.error).toBeTruthy();
+    });
+
+    it("uses dashboard_password instead of proxy_api_key when configured", async () => {
+      mockConfig.server.dashboard_password = "dashboard-secret";
+      const app = createApp();
+
+      const apiKeyRes = await app.request("/auth/dashboard-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: "secret-key" }),
+      });
+      expect(apiKeyRes.status).toBe(401);
+
+      const dashboardRes = await app.request("/auth/dashboard-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: "dashboard-secret" }),
+      });
+      expect(dashboardRes.status).toBe(200);
+    });
+
+    it("treats empty dashboard_password as unset and falls back to proxy_api_key", async () => {
+      mockConfig.server.dashboard_password = "   ";
+      const app = createApp();
+      const res = await app.request("/auth/dashboard-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: "secret-key" }),
+      });
+      expect(res.status).toBe(200);
     });
 
     it("returns 400 with missing body", async () => {
@@ -211,11 +246,22 @@ describe("dashboard auth endpoints", () => {
   describe("GET /auth/dashboard-status", () => {
     it("returns required=false when no key configured", async () => {
       mockConfig.server.proxy_api_key = null;
+      mockConfig.server.dashboard_password = null;
       const app = createApp();
       const res = await app.request("/auth/dashboard-status");
       const body = await res.json();
       expect(body.required).toBe(false);
       expect(body.authenticated).toBe(true);
+    });
+
+    it("returns required=true when only dashboard_password is configured", async () => {
+      mockConfig.server.proxy_api_key = null;
+      mockConfig.server.dashboard_password = "dashboard-secret";
+      const app = createApp();
+      const res = await app.request("/auth/dashboard-status");
+      const body = await res.json();
+      expect(body.required).toBe(true);
+      expect(body.authenticated).toBe(false);
     });
 
     it("returns required=false for localhost", async () => {

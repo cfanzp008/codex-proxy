@@ -396,7 +396,7 @@ for await (const chunk of stream) {
 
 | 分类 | 关键配置 | 说明 |
 |------|---------|------|
-| `server` | `host`, `port`, `proxy_api_key` | 监听地址与 API 密钥 |
+| `server` | `host`, `port`, `proxy_api_key`, `dashboard_password` | 监听地址、API 密钥与 Dashboard 登录密码 |
 | `api` | `base_url`, `timeout_seconds` | 上游 API 地址与超时 |
 | `client` | `app_version`, `build_number`, `chromium_version` | 模拟的 Codex Desktop 版本 |
 | `model` | `default`, `default_reasoning_effort`, `inject_desktop_context` | 默认模型与推理配置 |
@@ -440,9 +440,12 @@ tls:
 server:
   proxy_api_key: "pwd"    # 自定义密钥，客户端用 Bearer pwd 访问
   # proxy_api_key: null   # null = 自动生成 codex-proxy-xxxx 格式密钥
+  dashboard_password: "dashboard-pwd"  # 可选：远程 Dashboard 登录密码
 ```
 
 当前密钥始终显示在控制面板的 API Configuration 区域。
+
+如果配置了 `dashboard_password`，远程 Dashboard 登录使用它，API 请求仍然只使用 `proxy_api_key`。如果未配置 `dashboard_password`，Dashboard 登录会继续回退使用 `proxy_api_key`，保持旧版本行为。建议两者使用不同的强随机值；复用会抵消凭据分离带来的安全收益。
 
 ### 环境变量覆盖
 

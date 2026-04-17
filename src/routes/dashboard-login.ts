@@ -2,13 +2,14 @@
  * Dashboard Login Routes — cookie-based authentication for the web dashboard.
  *
  * Provides login/logout/status endpoints that work with the dashboard-auth middleware.
- * Uses the existing proxy_api_key as the dashboard password.
+ * Uses dashboard_password when configured, falling back to proxy_api_key.
  */
 
 import { timingSafeEqual } from "crypto";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { getConfig } from "../config.js";
+import { getDashboardPassword } from "../auth/dashboard-password.js";
 import { isLocalhostRequest } from "../utils/is-localhost.js";
 import { getRealClientIp } from "../utils/get-real-client-ip.js";
 import { parseSessionCookie } from "../utils/parse-cookie.js";
@@ -65,7 +66,7 @@ export function _resetRateLimitForTest(): void {
 export function createDashboardAuthRoutes(): Hono {
   const app = new Hono();
 
-  // POST /auth/dashboard-login — validate proxy_api_key and set session cookie
+  // POST /auth/dashboard-login — validate dashboard password and set session cookie
   app.post("/auth/dashboard-login", async (c) => {
     const config = getConfig();
     const remoteAddr = getRealClientIp(c, config.server.trust_proxy) || "unknown";
@@ -90,7 +91,7 @@ export function createDashboardAuthRoutes(): Hono {
       return c.json({ error: "Password is required" });
     }
 
-    const key = config.server.proxy_api_key ?? "";
+    const key = getDashboardPassword(config) ?? "";
     const a = Buffer.from(password);
     const b = Buffer.from(key);
     const match = a.length === b.length && timingSafeEqual(a, b);
@@ -122,8 +123,8 @@ export function createDashboardAuthRoutes(): Hono {
   app.get("/auth/dashboard-status", (c) => {
     const config = getConfig();
 
-    // No key → no gate required
-    if (!config.server.proxy_api_key) {
+    // No dashboard password → no gate required
+    if (!getDashboardPassword(config)) {
       return c.json({ required: false, authenticated: true });
     }
 

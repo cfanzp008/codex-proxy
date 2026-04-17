@@ -224,6 +224,25 @@ describe("validateProxyApiKey", () => {
     expect(pool.validateProxyApiKey("wrong-key")).toBe(false);
   });
 
+  it("does not validate dashboard_password as a proxy API key", () => {
+    setConfigForTesting(createMockConfig({
+      server: {
+        proxy_api_key: "my-secret-key",
+        dashboard_password: "dashboard-secret",
+      },
+    }));
+
+    const pool = new AccountPool({
+      persistence: createMemoryPersistence(),
+      rotationStrategy: "least_used",
+      initialToken: null,
+      rateLimitBackoffSeconds: 60,
+    });
+
+    expect(pool.validateProxyApiKey("my-secret-key")).toBe(true);
+    expect(pool.validateProxyApiKey("dashboard-secret")).toBe(false);
+  });
+
   it("validates against per-account proxyApiKey", () => {
     const pool = new AccountPool({
       persistence: createMemoryPersistence(),

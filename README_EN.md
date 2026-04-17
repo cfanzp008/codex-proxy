@@ -344,7 +344,7 @@ All configuration in `config/default.yaml`:
 
 | Section | Key Settings | Description |
 |---------|-------------|-------------|
-| `server` | `host`, `port`, `proxy_api_key` | Listen address and API key |
+| `server` | `host`, `port`, `proxy_api_key`, `dashboard_password` | Listen address, API key, and Dashboard login password |
 | `api` | `base_url`, `timeout_seconds` | Upstream API URL and timeout |
 | `client` | `app_version`, `build_number`, `chromium_version` | Codex Desktop version to impersonate |
 | `model` | `default`, `default_reasoning_effort`, `inject_desktop_context` | Default model and reasoning config |
@@ -352,6 +352,17 @@ All configuration in `config/default.yaml`:
 | `tls` | `proxy_url`, `force_http11` | TLS proxy and HTTP version |
 | `quota` | `refresh_interval_minutes`, `warning_thresholds`, `skip_exhausted` | Quota refresh and warnings |
 | `session` | `ttl_minutes`, `cleanup_interval_minutes` | Dashboard session management |
+
+### API Key and Dashboard Password
+
+```yaml
+server:
+  proxy_api_key: "pwd"    # API clients authenticate with Bearer pwd
+  # proxy_api_key: null   # null = auto-generated codex-proxy-xxxx key
+  dashboard_password: "dashboard-pwd"  # optional remote Dashboard login password
+```
+
+When `dashboard_password` is configured, remote Dashboard login uses it while API requests still use `proxy_api_key`. When `dashboard_password` is not configured, Dashboard login falls back to `proxy_api_key` for backwards compatibility. Use different strong random values for the two fields; reusing them defeats the separation.
 
 ### Environment Variable Overrides
 

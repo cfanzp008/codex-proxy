@@ -1,13 +1,15 @@
 /**
  * Dashboard Auth Middleware — cookie-based login gate for the web dashboard.
  *
- * When proxy_api_key is configured and the request originates from a non-localhost
- * address, require a valid _codex_session cookie. Protects dashboard data endpoints
- * while allowing: static assets, health, API routes, login endpoints, and HTML shell.
+ * When a dashboard password is configured and the request originates from a
+ * non-localhost address, require a valid _codex_session cookie. Protects
+ * dashboard data endpoints while allowing: static assets, health, API routes,
+ * login endpoints, and HTML shell.
  */
 
 import type { Context, Next } from "hono";
 import { getConfig } from "../config.js";
+import { getDashboardPassword } from "../auth/dashboard-password.js";
 import { isLocalhostRequest } from "../utils/is-localhost.js";
 import { getRealClientIp } from "../utils/get-real-client-ip.js";
 import { validateSession } from "../auth/dashboard-session.js";
@@ -36,8 +38,8 @@ const ALLOWED_GET_EXACT = new Set(["/"]);
 export async function dashboardAuth(c: Context, next: Next): Promise<Response | void> {
   const config = getConfig();
 
-  // No key configured → no gate
-  if (!config.server.proxy_api_key) return next();
+  // No dashboard password configured → no gate
+  if (!getDashboardPassword(config)) return next();
 
   // Localhost → bypass (Electron + local dev)
   const remoteAddr = getRealClientIp(c, config.server.trust_proxy);

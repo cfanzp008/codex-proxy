@@ -61,6 +61,8 @@ export function createMockConfig(overrides?: MockConfigOverrides): AppConfig {
       host: "0.0.0.0",
       port: 8080,
       proxy_api_key: null,
+      dashboard_password: null,
+      trust_proxy: false,
     },
     session: {
       ttl_minutes: 60,

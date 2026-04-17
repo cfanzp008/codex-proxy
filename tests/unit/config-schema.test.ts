@@ -32,6 +32,7 @@ describe("ConfigSchema", () => {
     expect(result.server.port).toBe(8080);
     expect(result.server.host).toBe("0.0.0.0");
     expect(result.server.proxy_api_key).toBeNull();
+    expect(result.server.dashboard_password).toBeNull();
     expect(result.auth.rotation_strategy).toBe("least_used");
     expect(result.auth.refresh_concurrency).toBe(2);
     expect(result.auth.max_concurrent_per_account).toBe(3);
@@ -52,7 +53,7 @@ describe("ConfigSchema", () => {
       client: { platform: "linux" },
       model: { default: "gpt-5.4" },
       auth: { rotation_strategy: "round_robin", max_concurrent_per_account: null },
-      server: { port: 3000, proxy_api_key: "sk-test" },
+      server: { port: 3000, proxy_api_key: "sk-test", dashboard_password: "dashboard-secret" },
       session: { ttl_minutes: 120 },
       tls: { force_http11: true },
       quota: { skip_exhausted: false },
@@ -66,6 +67,7 @@ describe("ConfigSchema", () => {
     expect(result.auth.max_concurrent_per_account).toBeNull();
     expect(result.server.port).toBe(3000);
     expect(result.server.proxy_api_key).toBe("sk-test");
+    expect(result.server.dashboard_password).toBe("dashboard-secret");
     expect(result.tls.force_http11).toBe(true);
     expect(result.quota.skip_exhausted).toBe(false);
     expect(result.update.auto_update).toBe(false);
