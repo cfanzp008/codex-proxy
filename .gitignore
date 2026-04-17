@@ -29,3 +29,4 @@ stitch-screens/
 CLAUDE.md
 *.tar.gz
 stitch-output/
+.omx/
